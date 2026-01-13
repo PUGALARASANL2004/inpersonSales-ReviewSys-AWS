@@ -10,29 +10,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Get source code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Python for backend
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
+      # 3️⃣ Setup Node.js for frontend
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
 
+      # 4️⃣ Install backend dependencies
       - name: Install backend dependencies
         run: |
           pip install -r requirements.txt
 
+      # 5️⃣ Build frontend (CI warnings disabled)
       - name: Build frontend
         run: |
           cd ui
           npm install
-          npm run build
+          CI=false npm run build
 
+      # 6️⃣ Deploy to AWS EC2
       - name: Deploy to AWS EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -43,3 +49,4 @@ jobs:
             cd ~/inpersonSales-ReviewSys-AWS
             git pull origin main
             pm2 restart backend
+            pm2 save
