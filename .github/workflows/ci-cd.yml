@@ -10,27 +10,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
+      # 3️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
 
-      # ---------- BUILD FRONTEND ----------
+      # 4️⃣ Install backend dependencies
+      - name: Install backend dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 5️⃣ Build frontend (IMPORTANT FIX)
       - name: Build frontend
         run: |
           cd ui
           npm install
-          npm run build
+          CI=false npm run build
 
-      # ---------- DEPLOY TO AWS ----------
+      # 6️⃣ Deploy to AWS EC2 via SSH
       - name: Deploy to AWS EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -41,17 +52,13 @@ jobs:
           timeout: 30s
           command_timeout: 10m
           script: |
-            set -e
             cd /home/ec2-user/inpersonSales-ReviewSys-AWS
 
             git pull origin main
 
             source venv/bin/activate
 
-            pip install -r requirements.txt
-
-            pm2 restart backend || \
-            pm2 start venv/bin/uvicorn \
+            pm2 restart backend || pm2 start venv/bin/uvicorn \
               --name backend \
               -- api.main:app \
               --host 0.0.0.0 \
