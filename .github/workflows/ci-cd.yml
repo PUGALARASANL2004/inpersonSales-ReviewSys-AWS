@@ -10,17 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Get source code
+      # 1️⃣ Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Python for backend
+      # 2️⃣ Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      # 3️⃣ Setup Node.js for frontend
+      # 3️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -31,14 +31,14 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      # 5️⃣ Build frontend (CI warnings disabled)
+      # 5️⃣ Build frontend (disable CI strict mode)
       - name: Build frontend
         run: |
           cd ui
           npm install
           CI=false npm run build
 
-      # 6️⃣ Deploy to AWS EC2
+      # 6️⃣ Deploy to AWS EC2 using SSH
       - name: Deploy to AWS EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -46,7 +46,12 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/inpersonSales-ReviewSys-AWS
+            export PATH=$PATH:/usr/local/bin
+            cd /home/ec2-user/inpersonSales-ReviewSys-AWS
+
             git pull origin main
-            pm2 restart backend
+
+            # Restart backend safely
+            pm2 restart backend || pm2 start "uvicorn api.main:app --host 0.0.0.0 --port 8000" --name backend
+
             pm2 save
