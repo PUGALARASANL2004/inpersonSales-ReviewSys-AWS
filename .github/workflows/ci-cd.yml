@@ -42,9 +42,19 @@ jobs:
           CI=false npm run build
 
       # 6️⃣ Deploy to AWS EC2 via SSH
+      - name: Debug Secrets
+        run: |
+          echo "Debug Info:"
+          echo "Host configured as: ${{ secrets.EC2_HOST }}"
+          echo "User configured as: ${{ secrets.EC2_USER }}"
+          echo "Key length: ${#SSH_KEY}"
+        env:
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+
       - name: Deploy to AWS EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
+          debug: true
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
