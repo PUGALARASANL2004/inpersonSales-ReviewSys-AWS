@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 from typing import Dict, Any, List
 import yaml
+from typing import Optional
+
 
 from openai import OpenAI
 
@@ -283,70 +285,6 @@ def _extract_project_facts_for_validation(project_knowledge: Dict[str, Any]) -> 
                 for key in ["Price\nonwards", "Price onwards", "Land Extent", "Total Units", "Status"]:
                     value = happinest_main_data.get(key, "").strip()
                     if value:
-                        value = main_data.get(key, "").strip()
-                    if value:
-                        facts.append(f"**{key}:** {value}")
-                        facts.append("")
-        
-        # Extract HappiNest facts
-        happinest_reckoner = files.get("happinest_reckoner_excel", {})
-        if happinest_reckoner.get("status") == "success":
-            happinest_sheets = happinest_reckoner.get("sheets", {})
-            happinest_sheet_data = None
-            for sheet_name in happinest_sheets.keys():
-                sheet_info = happinest_sheets[sheet_name]
-                if isinstance(sheet_info, dict) and "data" in sheet_info:
-                    happinest_data_list = sheet_info["data"]
-                    if happinest_data_list and len(happinest_data_list) > 0:
-                        happinest_sheet_data = happinest_data_list
-                        break
-            
-            if happinest_sheet_data and len(happinest_sheet_data) > 0:
-                # Get the first row which contains the main project information
-                happinest_main_data = happinest_sheet_data[0] if isinstance(happinest_sheet_data[0], dict) else {}
-                
-                facts.append("")
-                facts.append("=" * 80)
-                facts.append("**CRITICAL PROJECT FACTS FOR VALIDATION - HAPPINEST:**")
-                facts.append("=" * 80)
-                facts.append("")
-                facts.append("Use these EXACT values to validate agent statements about HappiNest project. Any deviation = 'no' for project_knowledge.")
-                facts.append("")
-                
-                # Extract HappiNest project facts
-                happinest_project = happinest_main_data.get("Project", "").strip()
-                if happinest_project:
-                    facts.append(f"**Project Name:** {happinest_project}")
-                    facts.append("  → **CORRECT:** 'HappiNest' or 'Happinest' or variations")
-                    facts.append("")
-                
-                happinest_location = happinest_main_data.get("Location", "").strip()
-                if happinest_location:
-                    facts.append(f"**Location:** {happinest_location}")
-                    facts.append("")
-                
-                happinest_approval = happinest_main_data.get("Approval", "").strip()
-                if happinest_approval:
-                    facts.append(f"**Approval:** {happinest_approval}")
-                    facts.append("")
-                
-                happinest_rate = happinest_main_data.get("Rate per sqft", "").strip()
-                if happinest_rate:
-                    facts.append(f"**Rate per sqft (CRITICAL - MUST VALIDATE):**")
-                    facts.append(f"  Source data: {happinest_rate}")
-                    facts.append("  → **VALIDATION RULE:** Agent MUST mention the correct price from source data")
-                    facts.append("")
-                
-                happinest_plot_size = happinest_main_data.get("Plot Size", "").strip()
-                if happinest_plot_size:
-                    facts.append(f"**Plot Sizes (CRITICAL - MUST VALIDATE):**")
-                    facts.append(f"  Source data: {happinest_plot_size}")
-                    facts.append("  → **VALIDATION RULE:** Agent MUST mention correct plot sizes from source data")
-                    facts.append("")
-                
-                for key in ["Price\nonwards", "Price onwards", "Land Extent", "Total Units", "Status"]:
-                    value = happinest_main_data.get(key, "").strip()
-                    if value:
                         facts.append(f"**{key}:** {value}")
                         facts.append("")
         
@@ -369,14 +307,14 @@ def _extract_project_facts_for_validation(project_knowledge: Dict[str, Any]) -> 
         return "\n".join(facts)
     except Exception as e:
         logger.warning(f"Error extracting project facts: {e}")
-        return json.dumps(project_knowledge, indent=2) if project_knowledge else "Project knowledge data not available."
 
 
 def create_scoring_prompt(
     transcript: str,
     rubric: Dict[str, Any],
     project_knowledge: Dict[str, Any],
-    speaker_segments: List[Dict[str, Any]] | None = None,
+    speaker_segments: Optional[List[Dict[str, Any]]] = None
+
 ) -> str:
     """Create the prompt for OpenAI to score the transcript, with contextual reasoning and timing."""
     

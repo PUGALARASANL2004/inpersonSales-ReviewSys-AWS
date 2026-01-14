@@ -94,10 +94,25 @@ jobs:
             CI=false npm run build
             cd ..
             
-            # 4. Start/Restart Application with PM2
+            # 3.5. Create .env file with environment variables (if secrets are configured)
+            echo "Creating .env file..."
+            cat > .env << 'EOF'
+            OPENAI_API_KEY=${OPENAI_API_KEY:-your_openai_api_key_here}
+            SONIOX_API_KEY=${SONIOX_API_KEY:-your_soniox_api_key_here}
+            SONIOX_API_BASE_URL=https://api.soniox.com
+            SONIOX_MODEL_ID=stt-async-v3
+            OPENAI_MODEL=gpt-4o-mini
+            EOF
+            
+            # 4. Create logs directory if it doesn't exist
+            echo "Creating logs directory..."
+            mkdir -p logs
+            
+            # 5. Start/Restart Application with PM2
             echo "Restarting application via ecosystem.config.js..."
-            # Start or restart using the ecosystem file
-            # 'pm2 start' with ecosystem file is usually idempotent (restarts if exists)
-            pm2 start ecosystem.config.js && pm2 save
+            # Delete existing processes if they exist, then start fresh to avoid duplicates
+            pm2 delete all || true
+            pm2 start ecosystem.config.js
+            pm2 save
             
             echo "Deployment complete!"

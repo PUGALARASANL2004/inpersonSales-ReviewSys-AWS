@@ -4,7 +4,7 @@ module.exports = {
       name: 'api',
       script: '.venv/bin/python',
       args: '-m uvicorn api.main:app --host 0.0.0.0 --port 8000',
-      cwd: '/home/ec2-user/inpersonSales-ReviewSys',
+      cwd: '/home/ec2-user/inpersonSales-ReviewSys-AWS',
       instances: 1,
       exec_mode: 'fork',
       env: {
@@ -27,7 +27,7 @@ module.exports = {
       // Using npx serve (no global install needed)
       script: 'npx',
       args: 'serve -s ui/build -l 3000',
-      cwd: '/home/ec2-user/inpersonSales-ReviewSys',
+      cwd: '/home/ec2-user/inpersonSales-ReviewSys-AWS',
       instances: 1,
       exec_mode: 'fork',
       env: {
