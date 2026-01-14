@@ -66,35 +66,35 @@ jobs:
             
             echo "Deploying to $PROJECT_DIR"
             
-            # 1. Clone or Pull Repository
+            # 1. Clone or Pull Repository (using HTTPS - no auth needed for public repos)
             if [ -d "$PROJECT_DIR" ]; then
               echo "Directory exists. Pulling latest changes..."
               cd $PROJECT_DIR
+              git config --global --add safe.directory $PROJECT_DIR
+              git reset --hard HEAD
               git pull origin main
             else
               echo "Directory does not exist. Cloning repository..."
               git clone https://github.com/PUGALARASANL2004/inpersonSales-ReviewSys-AWS.git $PROJECT_DIR
               cd $PROJECT_DIR
+              git config --global --add safe.directory $PROJECT_DIR
             fi
             
             # 2. Setup Backend (Python)
             echo "Installing backend dependencies..."
-            # Ensure python3 is available, creates .venv if missing
             python3 -m venv .venv
             source .venv/bin/activate
-            # Upgrade pip and install requirements
             pip install --upgrade pip
             pip install -r requirements.txt
             
             # 3. Setup Frontend (React)
             echo "Building frontend..."
             cd ui
-            # Install dependencies and build
             npm install
             CI=false npm run build
             cd ..
             
-            # 3.5. Create .env file with environment variables (if secrets are configured)
+            # 3.5. Create .env file with environment variables
             echo "Creating .env file..."
             cat > .env << 'EOF'
             OPENAI_API_KEY=${OPENAI_API_KEY:-your_openai_api_key_here}
@@ -110,7 +110,6 @@ jobs:
             
             # 5. Start/Restart Application with PM2
             echo "Restarting application via ecosystem.config.js..."
-            # Delete existing processes if they exist, then start fresh to avoid duplicates
             pm2 delete all || true
             pm2 start ecosystem.config.js
             pm2 save
