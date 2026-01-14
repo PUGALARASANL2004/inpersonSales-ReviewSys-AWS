@@ -49,19 +49,45 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          timeout: 30s
-          command_timeout: 10m
+          timeout: 60s
+          command_timeout: 15m # Increased timeout for builds
           script: |
-            cd /home/ec2-user/inpersonSales-ReviewSys-AWS
-
-            git pull origin main
-
-            source venv/bin/activate
-
-            pm2 restart backend || pm2 start venv/bin/uvicorn \
-              --name backend \
-              -- api.main:app \
-              --host 0.0.0.0 \
-              --port 8000
-
-            pm2 save
+            PROJECT_DIR="/home/ec2-user/inpersonSales-ReviewSys-AWS"
+            
+            echo "Deploying to $PROJECT_DIR"
+            
+            # 1. Clone or Pull Repository
+            if [ -d "$PROJECT_DIR" ]; then
+              echo "Directory exists. Pulling latest changes..."
+              cd $PROJECT_DIR
+              git pull origin main
+            else
+              echo "Directory does not exist. Cloning repository..."
+              git clone https://github.com/PUGALARASANL2004/inpersonSales-ReviewSys-AWS.git $PROJECT_DIR
+              cd $PROJECT_DIR
+            fi
+            
+            # 2. Setup Backend (Python)
+            echo "Installing backend dependencies..."
+            # Ensure python3 is available, creates .venv if missing
+            python3 -m venv .venv
+            source .venv/bin/activate
+            # Upgrade pip and install requirements
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            
+            # 3. Setup Frontend (React)
+            echo "Building frontend..."
+            cd ui
+            # Install dependencies and build
+            npm install
+            CI=false npm run build
+            cd ..
+            
+            # 4. Start/Restart Application with PM2
+            echo "Restarting application via ecosystem.config.js..."
+            # Start or restart using the ecosystem file
+            # 'pm2 start' with ecosystem file is usually idempotent (restarts if exists)
+            pm2 start ecosystem.config.js && pm2 save
+            
+            echo "Deployment complete!"
